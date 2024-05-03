@@ -59,8 +59,7 @@ app.post('/login', async (req, res) => {
     }
 })
 app.get('/profile', async (req, res) => {
-    // const Email = "dkansagra04@gmail.com";
-    // const Password = "123456";
+
 
     const {Email, Password} = req.cookies;
     try {
