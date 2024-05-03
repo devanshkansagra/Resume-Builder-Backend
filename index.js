@@ -61,21 +61,25 @@ app.post('/login', async (req, res) => {
 app.get('/profile', async (req, res) => {
 
 
-    const {Email, Password} = req.cookies;
+    const { Email, Password } = req.cookies;
     try {
         const details = await user.findOne({ email: Email, password: Password });
         if (details) {
-            res.status(200).send({details: details});
+            res.status(200).send({ details: details });
         }
         else {
-            res.status(401).send({"401Error": "Unauthorized"});
+            res.status(401).send({ "401Error": "Unauthorized" });
         }
     } catch (error) {
         res.status(500).send({ "500Error": "Unable fetch details" });
     }
 })
-app.delete('/logout', (req, res) => {
-    res.send('login');
+app.delete('/logout', async (req, res) => {
+    if (req.headers.cookie) {
+        res.clearCookie('Email')
+            .clearCookie('Password')
+            .status(200).send({ "200Success": "User Logged Out" });
+    }
 })
 
 app.listen(port, () => {
