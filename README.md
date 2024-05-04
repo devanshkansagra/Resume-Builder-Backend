@@ -33,4 +33,4 @@ Any contributions you make are greatly appreciated.
 
 Devansh Kansagra - dkansagra04@gmail.com
 
-Project Link: [https://github.com/devanshkansagra/Resume-Builder-Backend](https://github.com/devanshkansagra/Resume-Builder-Backend)
+Frontend of this project: [https://github.com/devanshkansagra/Resume-Builder-Frontend](https://github.com/devanshkansagra/Resume-Builder-Frontend)
