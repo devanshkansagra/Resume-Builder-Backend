@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const user = require('./model/user');
 const cookieParser = require('cookie-parser');
+const nodemailer = require('nodemailer');
 
 const port = 4000;
 
@@ -79,6 +80,48 @@ app.delete('/logout', async (req, res) => {
         res.clearCookie('Email')
             .clearCookie('Password')
             .status(200).send({ "200Success": "User Logged Out" });
+    }
+})
+
+app.post('/forgot', async (req, res) => {
+    const { email } = req.body;
+
+    let code = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
+    var transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: 'lorem.ipsum.sample.email@gmail.com',
+            pass: 'tetmxtzkfgkwgpsc'
+        }
+    });
+    var mailOptions = {
+        from: 'lorem.ipsum.sample.email@gmail.com',
+        to: email,
+        subject: `Security code for verification`,
+        text: `Thankyou for reaching us. Your security code for verification is: ${code}`
+    };
+    try {
+        const userEmail = await user.findOne({ email: email });
+        if (userEmail) {
+            transporter.sendMail(mailOptions, function(error, info) {
+                if(error) {
+                    throw new Error(error);
+                }
+                else {
+                    console.log('Email is sent');
+                }
+            })
+            res.cookie('OTP', code, {
+                maxAge: 60000,
+                path: "/"
+            })
+            .status(200).send({ success: "User Found" });
+        }
+        else {
+            res.status(404).send({ message: "Unauthorized" });
+        }
+    } catch (error) {
+        res.status(500).send({ "500Error": "Unable to send email due to Server problems" })
     }
 })
 
