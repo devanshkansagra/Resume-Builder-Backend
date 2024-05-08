@@ -3,6 +3,7 @@ const app = express();
 const user = require('./model/user');
 const cookieParser = require('cookie-parser');
 const nodemailer = require('nodemailer');
+const fs = require('fs');
 
 const port = 4000;
 
@@ -24,6 +25,26 @@ app.post('/signup', async (req, res) => {
         }
         else {
             const userSave = await newUser.save();
+
+            // Creating a log whenever new users sign up
+            var currentDate = new Date();
+
+            var year = currentDate.getFullYear();
+            var month = ('0' + (currentDate.getMonth() + 1)).slice(-2);
+            var day = ('0' + currentDate.getDate()).slice(-2);
+            var hours = ('0' + currentDate.getHours()).slice(-2);
+            var minutes = ('0' + currentDate.getMinutes()).slice(-2);
+            var seconds = ('0' + currentDate.getSeconds()).slice(-2);
+
+            var formattedDateTime = year + '-' + month + '-' + day + ' ' + hours + ':' + minutes + ':' + seconds;
+            let log = `\n[${formattedDateTime}] INFO: New user Signed UP \nEmail: ${email} \nIP Address: ${req.ip} \n`
+
+            fs.appendFile('./logs.txt', log, 'utf-8', (err, data) => {
+                if (err) {
+                    console.log('Unable to enter the log')
+                }
+            })
+
             if (userSave) {
                 res.cookie('Email', email, {
                     maxAge: 900000,
@@ -103,8 +124,8 @@ app.post('/forgot', async (req, res) => {
     try {
         const userEmail = await user.findOne({ email: email });
         if (userEmail) {
-            transporter.sendMail(mailOptions, function(error, info) {
-                if(error) {
+            transporter.sendMail(mailOptions, function (error, info) {
+                if (error) {
                     throw new Error(error);
                 }
                 else {
@@ -115,7 +136,7 @@ app.post('/forgot', async (req, res) => {
                 maxAge: 60000,
                 path: "/"
             })
-            .status(200).send({ success: "User Found" });
+                .status(200).send({ success: "User Found" });
         }
         else {
             res.status(404).send({ message: "Unauthorized" });
