@@ -174,6 +174,9 @@ app.post('/forgot', async (req, res) => {
             res.cookie('OTP', code, {
                 maxAge: 60000,
                 path: "/"
+            }).cookie('Email', email, {
+                maxAge: 60000,
+                path: "/"
             })
                 .status(200).send({ success: "User Found" });
         }
@@ -182,6 +185,30 @@ app.post('/forgot', async (req, res) => {
         }
     } catch (error) {
         res.status(500).send({ "500Error": "Unable to send email due to Server problems" })
+    }
+})
+
+app.post('/resetPassword', async (req, res) => {
+    if(req.headers.cookie) {
+        const cookieEmail = req.cookies.Email;
+        const cookieOTP = req.cookies.OTP;
+        const {password, otp} = req.body.data;
+
+        try {
+            const updatePassword = await user.updateOne({email: cookieEmail}, {password: password});
+            if(updatePassword && (otp === cookieOTP)) {
+                res.status(200).send({message: "Password Updated Successfully"});
+            }
+            else if(otp !== cookieOTP) {
+                res.status(401).send({message: "Unauthorized"});
+            }
+        }
+        catch(error) {
+            res.status(500).send({message: "Server Error"});
+        } 
+    }
+    else {
+        console.log("Cookies weren't set by client side");
     }
 })
 
