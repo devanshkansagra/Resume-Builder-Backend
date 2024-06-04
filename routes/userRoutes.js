@@ -6,7 +6,8 @@ const {
     profile,
     logout,
     forgot,
-    resetPassword
+    resetPassword,
+    edit,
 } = require('../controllers/userController');
 
 const userRouter = express.Router();
@@ -17,5 +18,6 @@ userRouter.get('/profile', profile);
 userRouter.delete('/logout', logout);
 userRouter.post('/forgot', forgot);
 userRouter.post('/resetPassword', resetPassword);
+userRouter.post('/edit', edit);
 
 module.exports = userRouter;

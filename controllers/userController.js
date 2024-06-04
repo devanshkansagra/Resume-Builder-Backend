@@ -144,4 +144,17 @@ const resetPassword = async (req, res) => {
         console.log("Cookies weren't set by client side");
     }
 }
-module.exports = { signup, login, profile, logout, forgot, resetPassword };
+
+const edit = async (req, res) => {
+    const {firstName, lastName, email, password} = req.body;
+    try {
+        const updateUser = await user.findOneAndUpdate({email: email}, {firstName: firstName, lastName: lastName, password: password});
+        if(updateUser) {
+            res.status(200).send({message: "User Updated Successfully"});
+        }
+    }
+    catch (error) {
+        res.status(500).send({message: "Server error"});
+    }
+}
+module.exports = { signup, login, profile, logout, forgot, resetPassword, edit };
