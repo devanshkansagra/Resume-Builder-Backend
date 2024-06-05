@@ -146,15 +146,30 @@ const resetPassword = async (req, res) => {
 }
 
 const edit = async (req, res) => {
-    const {firstName, lastName, email, password} = req.body;
-    try {
-        const updateUser = await user.findOneAndUpdate({email: email}, {firstName: firstName, lastName: lastName, password: password});
-        if(updateUser) {
-            res.status(200).send({message: "User Updated Successfully"});
+    if (req.headers.cookie) {
+        const { firstName, lastName, email, oldpassword, newpassword} = req.body;
+        try {
+            const updateUser = await user.findOneAndUpdate({ email: email, password: oldpassword }, { firstName: firstName, lastName: lastName, password: newpassword });
+            if (updateUser) {
+                res.cookie('Email', email, {
+                    maxAge: 900000,
+                    path: "/"
+                }).cookie('Password', newpassword, {
+                    maxAge: 900000,
+                    path: "/"
+                });
+                res.status(200).send({ message: "User Updated Successfully" });
+            }
+            else {
+                res.status(403).send({message: "Passwords doesn't match"});
+            }
+        }
+        catch (error) {
+            res.status(500).send({ message: error });
         }
     }
-    catch (error) {
-        res.status(500).send({message: "Server error"});
+    else {
+        res.status(403).send({message: "Cookies are not generated"});
     }
 }
 module.exports = { signup, login, profile, logout, forgot, resetPassword, edit };
