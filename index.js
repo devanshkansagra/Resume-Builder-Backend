@@ -1,11 +1,10 @@
 const express = require('express');
 const app = express();
-const user = require('./model/user');
 const cookieParser = require('cookie-parser');
-const nodemailer = require('nodemailer');
-const fs = require('fs');
 const userRouter = require('./routes/userRoutes');
+const dotenv = require('dotenv');
 
+dotenv.config({path: './.env'});
 const port = 4000;
 
 require('./database/connect');

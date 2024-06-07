@@ -1,6 +1,29 @@
 const user = require('../model/user');
 const nodemailer = require('nodemailer');
 
+const generateAccessAndRefreshToken = async (userId) => {
+    try {
+        const findUser = await user.findById(userId);
+        const accessToken = await findUser.generateAccessToken();
+        const refreshToken = await findUser.generateRefreshToken();
+
+        findUser.refreshToken = refreshToken;
+
+        const validate = await findUser.save({validateBeforeSave: false});
+        if(validate) {
+            console.log("Refrence token added to schema");
+        }
+        else {
+            console.log("Unable to add refresh token to schema");
+        }
+
+        return {accessToken, refreshToken}
+    }
+    catch(error) {
+        console.log(error);
+    }
+}
+
 const signup = async (req, res) => {
     const { firstName, lastName, email, password } = req.body;
     try {
@@ -14,13 +37,6 @@ const signup = async (req, res) => {
             const userSave = await newUser.save();
 
             if (userSave) {
-                res.cookie('Email', email, {
-                    maxAge: 900000,
-                    path: "/"
-                }).cookie('Password', password, {
-                    maxAge: 900000,
-                    path: "/"
-                })
                 res.status(201).send({ "201Success": "New User created" });
             }
         }
@@ -32,39 +48,45 @@ const signup = async (req, res) => {
 const login = async (req, res) => {
     const { email, password } = req.body;
     try {
-        const findUser = await user.findOne({ email: email, password: password });
-        if (findUser) {
+        const findUser = await user.findOne({ email: email });
+        const validatePassword = await findUser.isPasswordCorrect(password);
+        if (findUser && validatePassword) {
 
-            res.cookie('Email', email, {
-                maxAge: 900000,
+            const {accessToken, refreshToken} = await generateAccessAndRefreshToken(findUser._id);
+
+            console.log("Access token: ", accessToken, '\n');
+            console.log("Refresh token: ", accessToken, '\n');
+            res.status(200)
+            .cookie("AccessToken", accessToken, {
+                httpOnly: true,
                 path: "/"
-            }).cookie('Password', password, {
-                maxAge: 900000,
+            })
+            .cookie("RefreshToken", refreshToken, {
+                httpOnly: true,
                 path: "/"
-            });
-            res.status(200).send({ "200OK": "Authorized User" })
+            })
+            .send({message: "Authorized"});
+        }
+        else if(!validatePassword) {
+            res.status(401).send({message: "Unauthorized"});
         }
         else {
-            res.status(401).send({ "401Unauthorized": "Unauthorized User" });
+            res.status(404).send({message: "User Not found"});
         }
     } catch (error) {
-        res.status(500).send({ "500Error": error });
+        console.log(error);
+        res.status(500).send({ "500Error": "Server Error" });
     }
 }
 
 const profile = async (req, res) => {
 
-    const { Email, Password } = req.cookies;
-    try {
-        const details = await user.findOne({ email: Email, password: Password });
-        if (details) {
-            res.status(200).send({ details: details });
-        }
-        else {
-            res.status(401).send({ "401Error": "Unauthorized" });
-        }
-    } catch (error) {
-        res.status(500).send({ "500Error": "Unable fetch details" });
+    const details = req.user;
+    if(details) {
+        res.status(200).send({details: details});
+    }
+    else {
+        res.status(404).send({message: "User not found"});
     }
 }
 
@@ -172,4 +194,4 @@ const edit = async (req, res) => {
         res.status(403).send({message: "Cookies are not generated"});
     }
 }
-module.exports = { signup, login, profile, logout, forgot, resetPassword, edit };
+module.exports = { signup, login, logout, profile, forgot, resetPassword, edit };
