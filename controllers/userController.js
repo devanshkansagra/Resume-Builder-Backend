@@ -9,17 +9,17 @@ const generateAccessAndRefreshToken = async (userId) => {
 
         findUser.refreshToken = refreshToken;
 
-        const validate = await findUser.save({validateBeforeSave: false});
-        if(validate) {
+        const validate = await findUser.save({ validateBeforeSave: false });
+        if (validate) {
             console.log("Refrence token added to schema");
         }
         else {
             console.log("Unable to add refresh token to schema");
         }
 
-        return {accessToken, refreshToken}
+        return { accessToken, refreshToken }
     }
-    catch(error) {
+    catch (error) {
         console.log(error);
     }
 }
@@ -52,26 +52,26 @@ const login = async (req, res) => {
         const validatePassword = await findUser.isPasswordCorrect(password);
         if (findUser && validatePassword) {
 
-            const {accessToken, refreshToken} = await generateAccessAndRefreshToken(findUser._id);
+            const { accessToken, refreshToken } = await generateAccessAndRefreshToken(findUser._id);
 
             console.log("Access token: ", accessToken, '\n');
             console.log("Refresh token: ", accessToken, '\n');
             res.status(200)
-            .cookie("AccessToken", accessToken, {
-                httpOnly: true,
-                path: "/"
-            })
-            .cookie("RefreshToken", refreshToken, {
-                httpOnly: true,
-                path: "/"
-            })
-            .send({message: "Authorized"});
+                .cookie("AccessToken", accessToken, {
+                    httpOnly: true,
+                    path: "/"
+                })
+                .cookie("RefreshToken", refreshToken, {
+                    httpOnly: true,
+                    path: "/"
+                })
+                .send({ message: "Authorized" });
         }
-        else if(!validatePassword) {
-            res.status(401).send({message: "Unauthorized"});
+        else if (!validatePassword) {
+            res.status(401).send({ message: "Unauthorized" });
         }
         else {
-            res.status(404).send({message: "User Not found"});
+            res.status(404).send({ message: "User Not found" });
         }
     } catch (error) {
         console.log(error);
@@ -82,11 +82,11 @@ const login = async (req, res) => {
 const profile = async (req, res) => {
 
     const details = req.user;
-    if(details) {
-        res.status(200).send({details: details});
+    if (details) {
+        res.status(200).send({ details: details });
     }
     else {
-        res.status(404).send({message: "User not found"});
+        res.status(404).send({ message: "User not found" });
     }
 }
 
@@ -106,7 +106,7 @@ const forgot = async (req, res) => {
         service: 'gmail',
         auth: {
             user: 'lorem.ipsum.sample.email@gmail.com',
-            pass: 'tetmxtzkfgkwgpsc'
+            pass: process.env.MAILPASSWORD
         }
     });
     var mailOptions = {
@@ -168,30 +168,41 @@ const resetPassword = async (req, res) => {
 }
 
 const edit = async (req, res) => {
-    if (req.headers.cookie) {
-        const { firstName, lastName, email, oldpassword, newpassword} = req.body;
-        try {
-            const updateUser = await user.findOneAndUpdate({ email: email, password: oldpassword }, { firstName: firstName, lastName: lastName, password: newpassword });
+
+    const { firstName, lastName, email, oldpassword, newpassword } = req.body;
+    try {
+        const User = await user.findOne({ email: email});
+        const validPassword = await User.isPasswordCorrect(oldpassword);
+
+        if (!User) {
+            res.status(404).send({ message: "User Not found" });
+        }
+        else if (!validPassword) {
+            res.status(401).send({ message: "Unauthorized" });
+        }
+        else {
+            const updateUser = await user.updateOne({ email: email }, { firstName: firstName, lastName: lastName, password: newpassword });
             if (updateUser) {
-                res.cookie('Email', email, {
-                    maxAge: 900000,
-                    path: "/"
-                }).cookie('Password', newpassword, {
-                    maxAge: 900000,
-                    path: "/"
-                });
-                res.status(200).send({ message: "User Updated Successfully" });
+
+                const { accessToken, refreshToken } = await generateAccessAndRefreshToken(User._id);
+
+                res.status(200)
+                    .cookie("AccessToken", accessToken, {
+                        httpOnly: true,
+                        path: "/"
+                    })
+                    .cookie("RefreshToken", refreshToken, {
+                        httpOnly: true,
+                        path: "/"
+                    })
+                    .send({ message: "User Updated successfully" });
             }
             else {
-                res.status(403).send({message: "Passwords doesn't match"});
+                res.status(400).send({ message: "Unable to update user" });
             }
         }
-        catch (error) {
-            res.status(500).send({ message: error });
-        }
-    }
-    else {
-        res.status(403).send({message: "Cookies are not generated"});
+    } catch (error) {
+        console.log(error);
     }
 }
 module.exports = { signup, login, logout, profile, forgot, resetPassword, edit };

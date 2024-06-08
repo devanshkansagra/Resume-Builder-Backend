@@ -33,6 +33,14 @@ userSchema.pre("save", async function(next) {
     next();
 })
 
+userSchema.pre("updateOne", async function(next) {
+   const update = this.getUpdate();
+   if(update.password) {
+    this.getUpdate().password = await bcrypt.hash(update.password, 12);
+   }
+   next();
+})
+
 userSchema.methods.isPasswordCorrect = async function (password) {
     return await bcrypt.compare(password, this.password);
 }
@@ -42,7 +50,9 @@ userSchema.methods.generateAccessToken = async function() {
         {
             _id: this._id,
             email: this.email,
-            password: this.password
+            password: this.password,
+            firstName: this.firstName,
+            lastName: this.lastName
         },
         process.env.ACCESS_TOKEN_SECRET_KEY,
         {
