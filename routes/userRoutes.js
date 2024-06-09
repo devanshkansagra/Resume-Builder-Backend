@@ -18,7 +18,7 @@ userRouter.post('/signup', signup);
 userRouter.post('/login', login);
 userRouter.get('/profile', verifyUser, profile);
 userRouter.delete('/logout', verifyUser ,logout);
-userRouter.post('/forgot', forgot);
+userRouter.post('/forgot',forgot);
 userRouter.post('/resetPassword', resetPassword);
 userRouter.post('/edit', edit);
 

@@ -92,8 +92,8 @@ const profile = async (req, res) => {
 
 const logout = async (req, res) => {
     if (req.headers.cookie) {
-        res.clearCookie('Email')
-            .clearCookie('Password')
+        res.clearCookie('AccessToken')
+            .clearCookie('RefreshToken')
             .status(200).send({ "200Success": "User Logged Out" });
     }
 }
@@ -105,18 +105,18 @@ const forgot = async (req, res) => {
     var transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
-            user: 'lorem.ipsum.sample.email@gmail.com',
+            user: process.env.MAIL,
             pass: process.env.MAILPASSWORD
         }
     });
     var mailOptions = {
-        from: 'lorem.ipsum.sample.email@gmail.com',
+        from: process.env.MAIL,
         to: email,
         subject: `Security code for verification`,
         text: `Thankyou for reaching us. Your security code for verification is: ${code}`
     };
     try {
-        const userEmail = await user.findOne({ email: email });
+        const userEmail = await user.findOne({email: email});
         if (userEmail) {
             transporter.sendMail(mailOptions, function (error, info) {
                 if (error) {
@@ -136,7 +136,7 @@ const forgot = async (req, res) => {
                 .status(200).send({ success: "User Found" });
         }
         else {
-            res.status(404).send({ message: "Unauthorized" });
+            res.status(404).send({ message: "User not found" });
         }
     } catch (error) {
         res.status(500).send({ "500Error": "Unable to send email due to Server problems" })
